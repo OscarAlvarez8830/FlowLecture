@@ -1,20 +1,25 @@
+// @flow
+type Callback = (event?: Event) => void;
+
 class DomNodeCollection {
-  constructor(nodes) {
+  nodes: HTMLElement[]
+  constructor(nodes: HTMLElement[]) {
     // The nodes passed in must always be an Array. NodeList has no
     // #forEach method, so we need to be able to count on the type of
     // `nodes` so that we can prevent TypeErrors later on. We therefore
     // must ensure we only pass the `DomNodeCollection` constructor
     // Arrays in our core function.
+
     this.nodes = nodes;
   }
 
-  each(cb) {
+  each(cb: (HTMLElement, ?number) => void) {
     // Our each passes in the node and index in traditional 'forEach' order,
     // jquery passes in index first and binds the call to the element.
     this.nodes.forEach(cb);
   }
 
-  on(eventName, callback) {
+  on(eventName: string, callback: Callback) {
     this.each((node) => {
       node.addEventListener(eventName, callback);
       const eventKey = `jqliteEvents-${eventName}`;
@@ -25,7 +30,7 @@ class DomNodeCollection {
     });
   }
 
-  off(eventName) {
+  off(eventName: string) {
     this.each((node) => {
       const eventKey = `jqliteEvents-${eventName}`;
       if (node[eventKey]) {
@@ -37,40 +42,46 @@ class DomNodeCollection {
     });
   }
 
-  html(html) {
+  html(html: string): ?string {
+    if (html === undefined) {
+      if (this.nodes.length > 0) {
+        return this.nodes[0].innerHTML;
+      }
+      return null;
+    }
     if (typeof html === "string") {
       this.each((node) => {
         node.innerHTML = html;
       });
-    } else if (this.nodes.length > 0) {
-      return this.nodes[0].innerHTML;
-    }
+    } 
   }
 
   empty() {
     this.html('');
   }
 
-  append(children) {
+  append(children: Object | string) { // eslint-disable-line flowtype/no-weak-types
     if (this.nodes.length === 0) return;
 
     if (typeof children === 'object' &&
         !(children instanceof DomNodeCollection)) {
       // ensure argument is coerced into DomNodeCollection
-      children = $l(children);
+      children = window.$l(children);
     }
 
     if (typeof children === "string") {
       this.each((node) => {
-        node.innerHTML += children;
+        if (node instanceof HTMLElement) {
+          node.innerHTML += children;
+        }
       });
-    } else if (children instanceof DomNodeCollection) {
+    } else {
       // You can't append the same child node to multiple parents,
       // so we must duplicate the child nodes here.
       this.each((node) => {
         // The argument to cloneNode indicates whether or not
         // all children should be cloned.
-        children.each((childNode) => {
+        children instanceof DomNodeCollection && children.each((childNode) => {
           node.appendChild(childNode.cloneNode(true));
         });
       });
@@ -78,30 +89,36 @@ class DomNodeCollection {
   }
 
   remove() {
-    this.each(node => node.parentNode.removeChild(node));
+    this.each(node => {
+      node.parentNode && node.parentNode.removeChild(node)
+    });
   }
 
-  attr(key, val) {
+  attr(key: string, val: string): ?string {
     if (typeof val === "string") {
-      this.each(node => node.setAttribute(key, val));
-    } else {
+      this.each(node => {
+        node instanceof HTMLElement && node.setAttribute(key, val)
+      });
+    } else if (this.nodes[0] instanceof HTMLElement) {
       return this.nodes[0].getAttribute(key);
     }
   }
 
-  addClass(newClass) {
-    this.each(node => node.classList.add(newClass));
+  addClass(newClass: string) {
+    this.each((node) => node.classList.add(newClass));
   }
 
-  removeClass(oldClass) {
+  removeClass(oldClass: string) {
     this.each(node => node.classList.remove(oldClass));
   }
 
-  toggleClass(toggleClass) {
-    this.each(node => node.classList.toggle(toggleClass));
+  toggleClass(toggleClass: string) {
+    this.each(node => {
+      node.classList.toggle(toggleClass);
+    });
   }
 
-  find(selector) {
+  find(selector: string): DomNodeCollection {
     let foundNodes = [];
     this.each((node) => {
       const nodeList = node.querySelectorAll(selector);
@@ -110,7 +127,7 @@ class DomNodeCollection {
     return new DomNodeCollection(foundNodes);
   }
 
-  children() {
+  children(): DomNodeCollection {
     let childNodes = [];
     this.each((node) => {
       const childNodeList = node.children;
@@ -119,11 +136,11 @@ class DomNodeCollection {
     return new DomNodeCollection(childNodes);
   }
 
-  parent() {
-    const parentNodes = [];
+  parent(): DomNodeCollection {
+    const parentNodes: HTMLElement[] = [];
     this.each(({ parentNode }) => {
       // we apply 'visited' property to prevent adding duplicate parents
-      if (!parentNode.visited) {
+      if (parentNode && !parentNode.visited) {
         parentNodes.push(parentNode);
         parentNode.visited = true;
       }

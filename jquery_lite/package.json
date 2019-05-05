@@ -6,15 +6,22 @@
   "scripts": {
     "build": "babel src/ -d lib/",
     "prepublish": "npm run build",
-    "flow": "flow"
+    "flow": "flow",
+    "lint": "eslint"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {},
   "devDependencies": {
+    "@babel/core": "^7.4.4",
+    "@babel/preset-flow": "^7.0.0",
     "babel-cli": "^6.26.0",
+    "babel-eslint": "^10.0.1",
     "babel-preset-flow": "^6.23.0",
+    "eslint": "^5.16.0",
+    "eslint-plugin-flow": "^2.29.1",
+    "eslint-plugin-flowtype": "^3.7.0",
     "flow-bin": "^0.98.0"
   }
 }

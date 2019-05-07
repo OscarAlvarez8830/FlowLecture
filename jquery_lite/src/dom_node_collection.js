@@ -71,9 +71,7 @@ class DomNodeCollection {
 
     if (typeof children === "string") {
       this.each((node) => {
-        if (node instanceof HTMLElement) {
-          node.innerHTML += children;
-        }
+        if (node) node.innerHTML += children;
       });
     } else {
       // You can't append the same child node to multiple parents,
@@ -97,9 +95,9 @@ class DomNodeCollection {
   attr(key: string, val: string): ?string {
     if (typeof val === "string") {
       this.each(node => {
-        node instanceof HTMLElement && node.setAttribute(key, val)
+        node && node.setAttribute(key, val)
       });
-    } else if (this.nodes[0] instanceof HTMLElement) {
+    } else if (this.nodes[0]) {
       return this.nodes[0].getAttribute(key);
     }
   }
